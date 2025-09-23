@@ -1,0 +1,83 @@
+from state_machine.state import State
+import terminalio
+import displayio
+import time
+from adafruit_bitmap_font import bitmap_font
+from adafruit_display_text.label import Label
+from adafruit_matrixportal.network import Network
+
+class StateClock(State):
+    def __init__(self, displayWidth, displayHeight, network, displayGroup, debug, blink):
+        super().__init__("Clock")
+        if not debug:
+            self.font = bitmap_font.load_font("/IBMPlexMono-Medium-24_jep.bdf")
+        else:
+            self.font = terminalio.FONT
+        
+        self.clock_label = Label(self.font)
+
+        self.displayWidth = displayWidth
+        self.displayHeight = displayHeight
+
+        self.network = network
+        self.last_check = None
+
+        self.displayGroup = displayGroup
+
+        self.color = displayio.Palette(4)  # Create a color palette
+        self.color[0] = 0x000000  # black background
+        self.color[1] = 0xFF0000  # red
+        self.color[2] = 0xCC4000  # amber
+        self.color[3] = 0x85FF00  # greenish
+
+        self.debug = debug
+        self.blink = blink
+
+    def load(self):
+        super().load()
+        self.displayGroup.append(self.clock_label)
+        self.update_time(show_colon=True)
+        print("Clock Loaded!")
+
+    def unload(self):
+        super().unload()
+        self.displayGroup.remove(self.clock_label)
+        print("Clock Unloaded!")
+
+    def update(self):
+        super().update()
+        if self.last_check is None or time.monotonic() > self.last_check + 1:
+            try:
+                self.last_check = time.monotonic()
+                self.update_time()
+                self.network.get_local_time()  # Synchronize Board's clock to Internet
+            except RuntimeError as e:
+                print("Some error occured, retrying! -", e)
+    
+    def update_time(self, *, hours=None, minutes=None, show_colon=False):
+        now = time.localtime()  # Get the time values we need
+        if hours is None:
+            hours = now[3]
+        if hours >= 18 or hours < 6:  # evening hours to morning
+            self.clock_label.color = self.color[1]
+        else:
+            self.clock_label.color = self.color[2]  # daylight hours
+            
+        if minutes is None:
+            minutes = now[4]
+
+        if self.blink:
+            colon = ":" if show_colon or now[5] % 2 else " "
+        else:
+            colon = ":"
+
+        self.clock_label.text = "{hours}{colon}{minutes:02d}".format(
+            hours=hours, minutes=minutes, colon=colon
+        )
+        bbx, bby, bbwidth, bbh = self.clock_label.bounding_box
+        # Center the label
+        self.clock_label.x = round(self.displayWidth / 2 - bbwidth / 2)
+        self.clock_label.y = self.displayHeight // 2
+        if self.debug:
+            print("bounding box: {},{},{},{}".format(bbx, bby, bbwidth, bbh))
+            print("Label x: {} y: {}".format(self.clock_label.x, self.clock_label.y)) 
