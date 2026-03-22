@@ -8,9 +8,9 @@
 import os
 import board
 import displayio
+from digitalio import DigitalInOut, Direction, Pull
 from adafruit_matrixportal.network import Network
 from adafruit_matrixportal.matrix import Matrix
-from digitalio import DigitalInOut, Direction, Pull
 
 from state_machine.state_machine import StateMachine
 from state_machine.state_clock import StateClock
