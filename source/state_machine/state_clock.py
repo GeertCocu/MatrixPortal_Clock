@@ -4,16 +4,14 @@ import displayio
 import time
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
-from adafruit_matrixportal.network import Network
 
 class StateClock(State):
-    def __init__(self, displayWidth, displayHeight, network, displayGroup, debug, blink):
+    def __init__(self, displayWidth, displayHeight, displayGroup, debug, blink):
         super().__init__("Clock")
         
         self.displayWidth = displayWidth
         self.displayHeight = displayHeight
         self.displayGroup = displayGroup
-        self.network = network
         self.debug = debug
         self.blink = blink
 
@@ -26,7 +24,7 @@ class StateClock(State):
         self.clock_label.anchor_point = (0.5, 0.5)
         self.clock_label.anchored_position = (self.displayWidth / 2, self.displayHeight / 2)
 
-        self.last_check = None
+        self.next_blink_time = None
 
         self.color = displayio.Palette(4)  # Create a color palette
         self.color[0] = 0x000000  # black background
@@ -48,11 +46,10 @@ class StateClock(State):
 
     def update(self):
         super().update()
-        if self.last_check is None or time.monotonic() > self.last_check + 1:
+        if self.next_blink_time is None or time.monotonic() > self.next_blink_time:
             try:
-                self.last_check = time.monotonic()
+                self.next_blink_time = time.monotonic() + 1 # Current time + 1 second
                 self.update_time()
-                self.network.get_local_time()  # Synchronize Board's clock to Internet
             except RuntimeError as e:
                 print("Some error occured, retrying! -", e)
     

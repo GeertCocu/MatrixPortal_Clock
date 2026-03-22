@@ -8,9 +8,11 @@
 import os
 import board
 import displayio
+import terminalio
 from digitalio import DigitalInOut, Direction, Pull
 from adafruit_matrixportal.network import Network
 from adafruit_matrixportal.matrix import Matrix
+from adafruit_display_text.label import Label
 
 from state_machine.state_machine import StateMachine
 from state_machine.state_clock import StateClock
@@ -54,9 +56,21 @@ tile_grid = displayio.TileGrid(bitmap, pixel_shader=color)
 group.append(tile_grid)  # Add the TileGrid to the Group
 display.root_group = group
 
+# Display to the user the wifi is connecting
+network_label = Label(terminalio.FONT)
+network_label.anchor_point = (0.5, 0.5)
+network_label.anchored_position = (display.width / 2, display.height / 2)
+network_label.color = 0x888888
+network_label.text = "Wifi..."
+group.append(network_label)
+network.connect() # Connecting to the internet
+network_label.text = "Time..."
+network.get_local_time()  # Synchronize Board's clock to Internet
+group.remove(network_label)
+
 stateMachine = StateMachine()
 stateQuote = StateQuoteOTD(display.width, display.height, group, DEBUG)
-stateClock = StateClock(display.width, display.height, network, group, DEBUG, BLINK)
+stateClock = StateClock(display.width, display.height, group, DEBUG, BLINK)
 
 buttonUpState = ButtonState(btnUp)
 buttonDownState = ButtonState(btnDown)
