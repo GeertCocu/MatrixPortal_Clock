@@ -9,20 +9,24 @@ from adafruit_matrixportal.network import Network
 class StateClock(State):
     def __init__(self, displayWidth, displayHeight, network, displayGroup, debug, blink):
         super().__init__("Clock")
+        
+        self.displayWidth = displayWidth
+        self.displayHeight = displayHeight
+        self.displayGroup = displayGroup
+        self.network = network
+        self.debug = debug
+        self.blink = blink
+
         if not debug:
             self.font = bitmap_font.load_font("/IBMPlexMono-Medium-24_jep.bdf")
         else:
             self.font = terminalio.FONT
         
         self.clock_label = Label(self.font)
+        self.clock_label.anchor_point = (0.5, 0.5)
+        self.clock_label.anchored_position = (self.displayWidth / 2, self.displayHeight / 2)
 
-        self.displayWidth = displayWidth
-        self.displayHeight = displayHeight
-
-        self.network = network
         self.last_check = None
-
-        self.displayGroup = displayGroup
 
         self.color = displayio.Palette(4)  # Create a color palette
         self.color[0] = 0x000000  # black background
@@ -30,8 +34,6 @@ class StateClock(State):
         self.color[2] = 0xCC4000  # amber
         self.color[3] = 0x85FF00  # greenish
 
-        self.debug = debug
-        self.blink = blink
 
     def load(self):
         super().load()
@@ -75,9 +77,6 @@ class StateClock(State):
             hours=hours, minutes=minutes, colon=colon
         )
         bbx, bby, bbwidth, bbh = self.clock_label.bounding_box
-        # Center the label
-        self.clock_label.x = round(self.displayWidth / 2 - bbwidth / 2)
-        self.clock_label.y = self.displayHeight // 2
         if self.debug:
             print("bounding box: {},{},{},{}".format(bbx, bby, bbwidth, bbh))
             print("Label x: {} y: {}".format(self.clock_label.x, self.clock_label.y)) 
