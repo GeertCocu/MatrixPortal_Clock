@@ -17,6 +17,7 @@ from adafruit_display_text.label import Label
 from state_machine.state_machine import StateMachine
 from state_machine.state_clock import StateClock
 from state_machine.state_quote_otd import StateQuoteOTD
+from state_machine.state_weather import StateWeather
 
 from button_state import ButtonState
 
@@ -71,11 +72,13 @@ group.remove(network_label)
 stateMachine = StateMachine()
 stateQuote = StateQuoteOTD(display.width, display.height, group, DEBUG)
 stateClock = StateClock(display.width, display.height, group, DEBUG, BLINK)
+stateWeather1 = StateWeather(display.width, display.height, group, network, os.getenv('OPENWEATHER_LOCATION_1'))
+stateWeather2 = StateWeather(display.width, display.height, group, network, os.getenv('OPENWEATHER_LOCATION_2'))
 
 buttonUpState = ButtonState(btnUp)
 buttonDownState = ButtonState(btnDown)
 
-states = [stateClock, stateQuote]
+states = [stateClock, stateQuote, stateWeather1, stateWeather2]
 stateIndex = 0
 
 stateMachine.setState(stateClock)
