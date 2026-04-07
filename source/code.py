@@ -52,9 +52,6 @@ color[1] = 0xFF0000  # red
 color[2] = 0xCC4000  # amber
 color[3] = 0x85FF00  # greenish
 
-# Create a TileGrid using the Bitmap and Palette
-tile_grid = displayio.TileGrid(bitmap, pixel_shader=color)
-group.append(tile_grid)  # Add the TileGrid to the Group
 display.root_group = group
 
 # Display to the user the wifi is connecting

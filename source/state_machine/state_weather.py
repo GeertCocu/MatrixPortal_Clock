@@ -82,11 +82,6 @@ class StateWeather(State):
             self.temp_label.color = self.fail_color
     
     def set_icon(self, icon_group, filename):
-        """The background image to a bitmap file.
-
-        :param filename: The filename of the chosen icon
-
-        """
         print("Set icon to ", filename)
         if icon_group:
             icon_group.pop()
