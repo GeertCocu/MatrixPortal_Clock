@@ -8,10 +8,10 @@ from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
 
 DATA_SOURCE_FORMAT = "http://api.openweathermap.org/data/2.5/weather?q={}&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
-UPDATE_INTERVAL = 300 # Once every 5 minutes
+UPDATE_INTERVAL = 600 # Once every 10 minutes
 
 class StateWeather(State):
-    def __init__(self, displayWidth, displayHeight, displayGroup, network, location):
+    def __init__(self, displayWidth, displayHeight, displayGroup, network, location, bigFont, smallFont):
         super().__init__("Weather")
         self.network = network
         self.displayWidth = displayWidth
@@ -27,22 +27,54 @@ class StateWeather(State):
         self.next_update_time = None
 
         self.fail_color = 0xFF0000
-        self.succes_color = 0x85FF00
+        self.big_color = 0xFFFFFF
+        self.small_color = 0x80FFFF
         self.weather_group = displayio.Group()
 
-        self.temp_label = Label(terminalio.FONT)
-        self.temp_label.anchor_point = (0, 0.5)
-        self.temp_label.anchored_position = (16, 8)
-        self.temp_label.text = "9999 C"
-        self.temp_label.color = self.fail_color
-        self.weather_group.append(self.temp_label)
+        if(bigFont == None):
+            self.big_font = terminalio.FONT
+        else:
+            self.big_font = bigFont
 
+        if(smallFont == None):
+            self.small_font = terminalio.FONT
+        else:
+            self.small_font = smallFont
+        
+        # Current Temperature
+        self.cur_temp_label = Label(self.big_font)
+        self.cur_temp_label.anchor_point = (0, 0.5)
+        self.cur_temp_label.anchored_position = (18, 8)
+        self.cur_temp_label.text = "99"
+        self.cur_temp_label.color = self.fail_color
+        self.weather_group.append(self.cur_temp_label)
+        # Max Temperature
+        self.high_temp_label = Label(self.small_font)
+        self.high_temp_label.anchor_point = (1, 0.5)
+        self.high_temp_label.anchored_position = (64, 8)
+        self.high_temp_label.text = "99"
+        self.high_temp_label.color = self.fail_color
+        self.weather_group.append(self.high_temp_label)
+        # Min Temperature
+        self.low_temp_label = Label(self.small_font)
+        self.low_temp_label.anchor_point = (1, 0.5)
+        self.low_temp_label.anchored_position = (64, 24)
+        self.low_temp_label.text = "99"
+        self.low_temp_label.color = self.fail_color
+        self.weather_group.append(self.low_temp_label)
+        # Weather Type Icon
         self.weather_icon_group = displayio.Group()
         self.weather_group.append(self.weather_icon_group)
 
+        #Location Icon, based on country
         self.location_icon_group = displayio.Group()
         self.location_icon_group.y = 16
         self.weather_group.append(self.location_icon_group)
+
+        self.high_low_icon_group = displayio.Group()
+        self.high_low_icon_group.x = 44
+        self.weather_group.append(self.high_low_icon_group)
+        StateWeather.set_icon(self.high_low_icon_group, "/icons/weather/highlow.bmp")
 
     def load(self):
         super().load()
@@ -72,16 +104,20 @@ class StateWeather(State):
         if not self.has_weather_update:
             return
         if self.response is not None:
-            self.temp_label.color = self.succes_color
-            self.temp_label.text = "%d C"%(self.response['main']['temp'])
+            self.cur_temp_label.color = self.big_color
+            self.cur_temp_label.text = "%d"%(self.response['main']['temp'])
+            self.high_temp_label.color = self.small_color
+            self.high_temp_label.text = "%d"%(self.response['main']['temp_max'])
+            self.low_temp_label.color = self.small_color
+            self.low_temp_label.text = "%d"%(self.response['main']['temp_min'])
             weather_icon = self.response['weather'][0]['icon']
-            self.set_icon(self.weather_icon_group, "/icons/weather/" + weather_icon + ".bmp")
+            StateWeather.set_icon(self.weather_icon_group, "/icons/weather/" + weather_icon + ".bmp")
             location_icon = self.response['sys']['country']
-            self.set_icon(self.location_icon_group, "/icons/countries/" + location_icon + ".bmp")
+            StateWeather.set_icon(self.location_icon_group, "/icons/countries/" + location_icon + ".bmp")
         else:
-            self.temp_label.color = self.fail_color
+            self.cur_temp_label.color = self.fail_color
     
-    def set_icon(self, icon_group, filename):
+    def set_icon(icon_group, filename):
         print("Set icon to ", filename)
         if icon_group:
             icon_group.pop()

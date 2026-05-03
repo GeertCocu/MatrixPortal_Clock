@@ -1,22 +1,22 @@
 from state_machine.state import State
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label, wrap_text_to_pixels
-from font_free_mono_10 import FONT as MONO_10
+import terminalio
 
-QUOTE = "This is a quote"
+QUOTE = "Amelia <3"
 
 class StateQuoteOTD(State):
-    def __init__(self, displayWidth, displayHeight, displayGroup, debug):
+    def __init__(self, displayWidth, displayHeight, displayGroup, font, debug):
         super().__init__("QuoteOTD")
         self.displayWidth = displayWidth
         self.displayHeight = displayHeight
         self.displayGroup = displayGroup
         self.debug = debug
 
-        if not debug:
-            self.font = bitmap_font.load_font("/IBMPlexMono-Medium-24_jep.bdf")
+        if font == None:
+            self.font = terminalio.FONT
         else:
-            self.font = MONO_10
+            self.font = font
 
         self.quote_label = label.Label(self.font)
         self.quote_label.anchor_point = (0.5, 0.5)
