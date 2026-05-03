@@ -7,7 +7,6 @@ from adafruit_matrixportal.network import Network
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
 
-DATA_SOURCE_FORMAT = "http://api.openweathermap.org/data/2.5/weather?q={}&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
 DATA_SOURCE_FORMAT = "https://api.openweathermap.org/data/3.0/onecall?lat={}&lon={}&exclude=minutely,hourly,alerts&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
 UPDATE_INTERVAL = 600 # Once every 10 minutes
 
