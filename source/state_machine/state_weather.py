@@ -8,18 +8,21 @@ from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
 
 DATA_SOURCE_FORMAT = "http://api.openweathermap.org/data/2.5/weather?q={}&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
+DATA_SOURCE_FORMAT = "https://api.openweathermap.org/data/3.0/onecall?lat={}&lon={}&exclude=minutely,hourly,alerts&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
 UPDATE_INTERVAL = 600 # Once every 10 minutes
 
 class StateWeather(State):
-    def __init__(self, displayWidth, displayHeight, displayGroup, network, location, bigFont, smallFont):
+    def __init__(self, displayWidth, displayHeight, displayGroup, network, locationkey, bigFont, smallFont):
         super().__init__("Weather")
         self.network = network
         self.displayWidth = displayWidth
         self.displayHeight = displayHeight
         self.displayGroup = displayGroup
 
-        self.data_source = DATA_SOURCE_FORMAT.format(location)
-        self.location = location.split(',')[0]
+        lat = os.getenv(locationkey+"_LAT")
+        lon = os.getenv(locationkey+"_LON")
+        flag = os.getenv(locationkey+"_FLAG")
+        self.data_source = DATA_SOURCE_FORMAT.format(lat, lon)
 
         self.has_weather_update = False
 
@@ -70,6 +73,7 @@ class StateWeather(State):
         self.location_icon_group = displayio.Group()
         self.location_icon_group.y = 16
         self.weather_group.append(self.location_icon_group)
+        StateWeather.set_icon(self.location_icon_group, "/icons/countries/" + flag + ".bmp")
 
         self.high_low_icon_group = displayio.Group()
         self.high_low_icon_group.x = 44
@@ -78,7 +82,7 @@ class StateWeather(State):
 
     def load(self):
         super().load()
-        self.fetch_weather()
+        self.display_weather()
         self.displayGroup.append(self.weather_group)
         print("Hello Weather")
 
@@ -98,22 +102,21 @@ class StateWeather(State):
             print("Fetching Weather...")
             self.response = self.network.fetch(self.data_source).json()
             self.next_update_time = time.monotonic() + UPDATE_INTERVAL
-            print("Weather Fetched:", self.response)
+            print("Weather Fetched")
     
     def display_weather(self):
         if not self.has_weather_update:
             return
         if self.response is not None:
             self.cur_temp_label.color = self.big_color
-            self.cur_temp_label.text = "%d"%(self.response['main']['temp'])
+            self.cur_temp_label.text = "%d"%(self.response['current']['temp'])
             self.high_temp_label.color = self.small_color
-            self.high_temp_label.text = "%d"%(self.response['main']['temp_max'])
+            self.high_temp_label.text = "%d"%(self.response['daily'][0]['temp']['max'])
             self.low_temp_label.color = self.small_color
-            self.low_temp_label.text = "%d"%(self.response['main']['temp_min'])
-            weather_icon = self.response['weather'][0]['icon']
+            self.low_temp_label.text = "%d"%(self.response['daily'][0]['temp']['min'])
+            weather_icon = self.response['current']['weather'][0]['icon']
             StateWeather.set_icon(self.weather_icon_group, "/icons/weather/" + weather_icon + ".bmp")
-            location_icon = self.response['sys']['country']
-            StateWeather.set_icon(self.location_icon_group, "/icons/countries/" + location_icon + ".bmp")
+            self.response = None # Free up memory
         else:
             self.cur_temp_label.color = self.fail_color
     
