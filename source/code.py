@@ -50,12 +50,6 @@ btnDown.direction = Direction.INPUT
 btnDown.pull = Pull.UP
 btnDown_prev = btnDown.value
 
-color = displayio.Palette(4)  # Create a color palette
-color[0] = 0x000000  # black background
-color[1] = 0xFF0000  # red
-color[2] = 0xCC4000  # amber
-color[3] = 0x85FF00  # greenish
-
 display.root_group = group
 
 gc.collect()
@@ -79,18 +73,14 @@ cur_mem = gc.mem_free()
 print("Available memory pre-statemachine: {} bytes".format(cur_mem))
 
 stateMachine = StateMachine()
-stateQuote = StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG)
-stateClock = StateClock(display.width, display.height, group, DEBUG, BLINK)
-stateWeather1 = StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_1", JUN_18, JUN_10)
-stateWeather2 = StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_2", JUN_18, JUN_10)
+stateMachine.addState(StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG))
+stateMachine.addState(StateClock(display.width, display.height, group, DEBUG, BLINK))
+stateMachine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_1", JUN_18, JUN_10))
+stateMachine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_2", JUN_18, JUN_10))
+stateMachine.setState(StateClock.clockId)
 
 buttonUpState = ButtonState(btnUp)
 buttonDownState = ButtonState(btnDown)
-
-states = [stateClock, stateQuote, stateWeather1, stateWeather2]
-stateIndex = 0
-
-stateMachine.setState(stateClock)
 
 while True:
     try:
@@ -99,14 +89,12 @@ while True:
         # Selects next state if up button was released
         buttonStateChanged, currentButtonValue = buttonUpState.pollButtonState()
         if(buttonStateChanged and currentButtonValue):
-           stateIndex = (stateIndex + 1) % len(states)
-           stateMachine.setState(states[stateIndex])
+           stateMachine.nextState()
         
         # Selects previous state if down button was released
         buttonStateChanged, currentButtonValue = buttonDownState.pollButtonState()
         if(buttonStateChanged and currentButtonValue):
-           stateIndex = (stateIndex - 1) % len(states)
-           stateMachine.setState(states[stateIndex])
+           stateMachine.prevState()
         
     except RuntimeError as e:
         print("Something went wrong -", e)

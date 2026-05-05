@@ -6,8 +6,10 @@ from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
 
 class StateClock(State):
+    clockId = "clock"
+
     def __init__(self, displayWidth, displayHeight, displayGroup, debug, blink):
-        super().__init__("Clock")
+        super().__init__(self.clockId)
         
         self.displayWidth = displayWidth
         self.displayHeight = displayHeight

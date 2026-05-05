@@ -1,5 +1,4 @@
 from state_machine.state import State
-from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label, wrap_text_to_pixels
 import terminalio
 

@@ -12,7 +12,7 @@ UPDATE_INTERVAL = 600 # Once every 10 minutes
 
 class StateWeather(State):
     def __init__(self, displayWidth, displayHeight, displayGroup, network, locationkey, bigFont, smallFont):
-        super().__init__("Weather")
+        super().__init__("Weather_{}".format(locationkey))
         self.network = network
         self.displayWidth = displayWidth
         self.displayHeight = displayHeight
