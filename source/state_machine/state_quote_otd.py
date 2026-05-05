@@ -21,6 +21,7 @@ class StateQuoteOTD(State):
         self.quote_label = label.Label(self.font)
         self.quote_label.anchor_point = (0.5, 0.5)
         self.quote_label.anchored_position = (self.displayWidth / 2, self.displayHeight / 2)
+        self.logMem()
 
     def load(self):
         super().load()

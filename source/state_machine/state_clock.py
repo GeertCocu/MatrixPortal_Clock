@@ -31,7 +31,7 @@ class StateClock(State):
         self.color[1] = 0xFF0000  # red
         self.color[2] = 0xCC4000  # amber
         self.color[3] = 0x85FF00  # greenish
-
+        self.logMem()
 
     def load(self):
         super().load()
@@ -73,7 +73,3 @@ class StateClock(State):
         self.clock_label.text = "{hours}{colon}{minutes:02d}".format(
             hours=hours, minutes=minutes, colon=colon
         )
-        bbx, bby, bbwidth, bbh = self.clock_label.bounding_box
-        if self.debug:
-            print("bounding box: {},{},{},{}".format(bbx, bby, bbwidth, bbh))
-            print("Label x: {} y: {}".format(self.clock_label.x, self.clock_label.y)) 

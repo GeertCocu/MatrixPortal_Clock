@@ -78,6 +78,7 @@ class StateWeather(State):
         self.high_low_icon_group.x = 44
         self.weather_group.append(self.high_low_icon_group)
         StateWeather.set_icon(self.high_low_icon_group, "/icons/weather/highlow.bmp")
+        self.logMem()
 
     def load(self):
         super().load()

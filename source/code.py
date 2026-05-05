@@ -9,6 +9,7 @@ import os
 import board
 import displayio
 import terminalio
+import gc
 from digitalio import DigitalInOut, Direction, Pull
 from adafruit_matrixportal.network import Network
 from adafruit_matrixportal.matrix import Matrix
@@ -57,6 +58,10 @@ color[3] = 0x85FF00  # greenish
 
 display.root_group = group
 
+gc.collect()
+cur_mem = gc.mem_free()
+print("Available memory pre-wifi: {} bytes".format(cur_mem))
+
 # Display to the user the wifi is connecting
 network_label = Label(terminalio.FONT)
 network_label.anchor_point = (0.5, 0.5)
@@ -68,6 +73,10 @@ network.connect() # Connecting to the internet
 network_label.text = "Time..."
 network.get_local_time()  # Synchronize Board's clock to Internet
 group.remove(network_label)
+
+gc.collect()
+cur_mem = gc.mem_free()
+print("Available memory pre-statemachine: {} bytes".format(cur_mem))
 
 stateMachine = StateMachine()
 stateQuote = StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG)
