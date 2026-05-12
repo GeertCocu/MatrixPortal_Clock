@@ -3,15 +3,20 @@ import os
 import time
 import terminalio
 import displayio
+import math
 from adafruit_matrixportal.network import Network
-from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
+from adafruit_display_shapes import line
 
 DATA_SOURCE_FORMAT = "https://api.openweathermap.org/data/3.0/onecall?lat={}&lon={}&exclude=minutely,hourly,alerts&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
 UPDATE_INTERVAL = 600 # Once every 10 minutes
+FAIL_COLOR = 0xFF0000
+
+BEAUFORT_COMP = 0.836
+BEAUFORT_POW = 2 / 3
 
 class StateWeather(State):
-    def __init__(self, displayWidth, displayHeight, displayGroup, network, locationkey, bigFont, smallFont):
+    def __init__(self, displayWidth: int, displayHeight: int, displayGroup, network: Network, locationkey: str, bigFont, smallFont):
         super().__init__("Weather_{}".format(locationkey))
         self.network = network
         self.displayWidth = displayWidth
@@ -28,7 +33,6 @@ class StateWeather(State):
         self.response = None
         self.next_update_time = None
 
-        self.fail_color = 0xFF0000
         self.big_color = 0xFFFFFF
         self.small_color = 0x80FFFF
         self.weather_group = displayio.Group()
@@ -47,42 +51,49 @@ class StateWeather(State):
         self.cur_temp_label = Label(self.big_font)
         self.cur_temp_label.anchor_point = (0, 0.5)
         self.cur_temp_label.anchored_position = (18, 8)
-        self.cur_temp_label.text = "99"
-        self.cur_temp_label.color = self.fail_color
+        self.cur_temp_label.text = "--"
+        self.cur_temp_label.color = FAIL_COLOR
         self.weather_group.append(self.cur_temp_label)
         # Max Temperature
         self.high_temp_label = Label(self.small_font)
         self.high_temp_label.anchor_point = (1, 0.5)
         self.high_temp_label.anchored_position = (64, 8)
-        self.high_temp_label.text = "99"
-        self.high_temp_label.color = self.fail_color
+        self.high_temp_label.text = "--"
+        self.high_temp_label.color = FAIL_COLOR
         self.weather_group.append(self.high_temp_label)
         # Min Temperature
         self.low_temp_label = Label(self.small_font)
         self.low_temp_label.anchor_point = (1, 0.5)
         self.low_temp_label.anchored_position = (64, 24)
-        self.low_temp_label.text = "99"
-        self.low_temp_label.color = self.fail_color
+        self.low_temp_label.text = "--"
+        self.low_temp_label.color = FAIL_COLOR
         self.weather_group.append(self.low_temp_label)
         # Weather Type Icon
         self.weather_icon_group = displayio.Group()
         self.weather_group.append(self.weather_icon_group)
 
-        #Location Icon, based on country
+        # Location Icon, based on country
         self.location_icon_group = displayio.Group()
         self.location_icon_group.y = 16
         self.weather_group.append(self.location_icon_group)
         StateWeather.set_icon(self.location_icon_group, "/icons/countries/" + flag + ".bmp")
 
+        # HighLow format image
         self.high_low_icon_group = displayio.Group()
         self.high_low_icon_group.x = 44
         self.weather_group.append(self.high_low_icon_group)
         StateWeather.set_icon(self.high_low_icon_group, "/icons/weather/highlow.bmp")
+
+        # Wind Direction/Speed
+        self.wind_origin = [26, 24]
+        self.wind_dir_line = None
+        self.wind_strength_origin = [18, 30]
+        self.wind_strength_line = None
+
         self.logMem()
 
     def load(self):
         super().load()
-        self.display_weather()
         self.displayGroup.append(self.weather_group)
         print("Hello Weather")
 
@@ -93,32 +104,42 @@ class StateWeather(State):
 
     def update(self):
         super().update()
-        self.display_weather()
-        self.fetch_weather()
+        has_weather_update = self.next_update_time is None or time.monotonic() > self.next_update_time
+        if has_weather_update:
+            self.next_update_time = time.monotonic() + UPDATE_INTERVAL
+            data = self.fetch_weather()
+            self.display_weather(data)
 
     def fetch_weather(self):
-        self.has_weather_update = self.next_update_time is None or time.monotonic() > self.next_update_time
-        if self.has_weather_update:
             print("Fetching Weather...")
-            self.response = self.network.fetch(self.data_source).json()
-            self.next_update_time = time.monotonic() + UPDATE_INTERVAL
+            response = self.network.fetch(self.data_source).json()
             print("Weather Fetched")
+            return response
     
-    def display_weather(self):
-        if not self.has_weather_update:
+    def display_weather(self, response):
+        if response is None: 
             return
-        if self.response is not None:
-            self.cur_temp_label.color = self.big_color
-            self.cur_temp_label.text = "%d"%(self.response['current']['temp'])
-            self.high_temp_label.color = self.small_color
-            self.high_temp_label.text = "%d"%(self.response['daily'][0]['temp']['max'])
-            self.low_temp_label.color = self.small_color
-            self.low_temp_label.text = "%d"%(self.response['daily'][0]['temp']['min'])
-            weather_icon = self.response['current']['weather'][0]['icon']
-            StateWeather.set_icon(self.weather_icon_group, "/icons/weather/" + weather_icon + ".bmp")
-            self.response = None # Free up memory
-        else:
-            self.cur_temp_label.color = self.fail_color
+        
+        self.cur_temp_label.color = self.big_color
+        self.cur_temp_label.text = "%d"%(response['current']['temp'])
+        self.high_temp_label.color = self.small_color
+        self.high_temp_label.text = "%d"%(response['daily'][0]['temp']['max'])
+        self.low_temp_label.color = self.small_color
+        self.low_temp_label.text = "%d"%(response['daily'][0]['temp']['min'])
+        weather_icon = response['current']['weather'][0]['icon']
+        StateWeather.set_icon(self.weather_icon_group, "/icons/weather/" + weather_icon + ".bmp")
+
+        if self.wind_dir_line is not None:
+            self.weather_group.remove(self.wind_dir_line)
+        wind_end = StateWeather.calc_wind_dir_coords(response['current']['wind_deg'], 7)        
+        self.wind_dir_line = line.Line(self.wind_origin[0], self.wind_origin[1], self.wind_origin[0] + wind_end[0], self.wind_origin[1] + wind_end[1], FAIL_COLOR)
+        self.weather_group.append(self.wind_dir_line)
+
+        if self.wind_strength_line is not None:
+            self.weather_group.remove(self.wind_strength_line)
+        wind_line_length = StateWeather.calc_wind_strength_coords(response['current']['wind_speed'], 2)
+        self.wind_strength_line = line.Line(self.wind_strength_origin[0], self.wind_strength_origin[1], self.wind_strength_origin[0] + wind_line_length, self.wind_strength_origin[1], self.big_color)
+        self.weather_group.append(self.wind_strength_line)
     
     def set_icon(icon_group, filename):
         print("Set icon to ", filename)
@@ -132,3 +153,16 @@ class StateWeather(State):
         weather_icon = displayio.TileGrid(icon, pixel_shader=icon.pixel_shader)
 
         icon_group.append(weather_icon)
+    
+    def calc_wind_dir_coords(windAngle: float, lineLength: int):
+        windAngleRad = windAngle * math.pi / 180
+        x = round(lineLength * math.sin(windAngleRad))
+        y = -round(lineLength * math.cos(windAngleRad)) # Negated because screen Y positive is downward
+        print(f"Wind Angle was {windAngle}, coords are (x: {x}, y: {y})")
+        return [x, y]
+    
+    def calc_wind_strength_coords(windSpeed: float, scaleMultiplier: int):
+        beaufort_scale = math.pow((windSpeed / BEAUFORT_COMP), BEAUFORT_POW)
+        print(f"Wind Speed was {windSpeed}m/s, bScale is {beaufort_scale}")
+        return round(beaufort_scale * scaleMultiplier)
+
