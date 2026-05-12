@@ -16,16 +16,16 @@ BEAUFORT_COMP = 0.836
 BEAUFORT_POW = 2 / 3
 
 class StateWeather(State):
-    def __init__(self, displayWidth: int, displayHeight: int, displayGroup, network: Network, locationkey: str, bigFont, smallFont):
-        super().__init__("Weather_{}".format(locationkey))
+    def __init__(self, display_width: int, display_height: int, display_group, network: Network, location_key: str, big_font, small_font):
+        super().__init__("Weather_{}".format(location_key))
         self.network = network
-        self.displayWidth = displayWidth
-        self.displayHeight = displayHeight
-        self.displayGroup = displayGroup
+        self.display_width = display_width
+        self.display_height = display_height
+        self.display_group = display_group
 
-        lat = os.getenv(locationkey+"_LAT")
-        lon = os.getenv(locationkey+"_LON")
-        flag = os.getenv(locationkey+"_FLAG")
+        lat = os.getenv(location_key+"_LAT")
+        lon = os.getenv(location_key+"_LON")
+        flag = os.getenv(location_key+"_FLAG")
         self.data_source = DATA_SOURCE_FORMAT.format(lat, lon)
 
         self.has_weather_update = False
@@ -37,15 +37,15 @@ class StateWeather(State):
         self.small_color = 0x80FFFF
         self.weather_group = displayio.Group()
 
-        if(bigFont == None):
+        if(big_font == None):
             self.big_font = terminalio.FONT
         else:
-            self.big_font = bigFont
+            self.big_font = big_font
 
-        if(smallFont == None):
+        if(small_font == None):
             self.small_font = terminalio.FONT
         else:
-            self.small_font = smallFont
+            self.small_font = small_font
         
         # Current Temperature
         self.cur_temp_label = Label(self.big_font)
@@ -94,12 +94,12 @@ class StateWeather(State):
 
     def load(self):
         super().load()
-        self.displayGroup.append(self.weather_group)
+        self.display_group.append(self.weather_group)
         print("Hello Weather")
 
     def unload(self):
         super().unload()
-        self.displayGroup.remove(self.weather_group) 
+        self.display_group.remove(self.weather_group) 
         print("Goodbye Weather")
 
     def update(self):
@@ -141,28 +141,28 @@ class StateWeather(State):
         self.wind_strength_line = line.Line(self.wind_strength_origin[0], self.wind_strength_origin[1], self.wind_strength_origin[0] + wind_line_length, self.wind_strength_origin[1], self.big_color)
         self.weather_group.append(self.wind_strength_line)
     
-    def set_icon(icon_group, filename):
-        print("Set icon to ", filename)
+    def set_icon(icon_group, file_name):
+        print("Set icon to ", file_name)
         if icon_group:
             icon_group.pop()
 
-        if not filename:
+        if not file_name:
             return  # we're done, no icon desired
 
-        icon = displayio.OnDiskBitmap(filename)
+        icon = displayio.OnDiskBitmap(file_name)
         weather_icon = displayio.TileGrid(icon, pixel_shader=icon.pixel_shader)
 
         icon_group.append(weather_icon)
     
-    def calc_wind_dir_coords(windAngle: float, lineLength: int):
-        windAngleRad = windAngle * math.pi / 180
-        x = round(lineLength * math.sin(windAngleRad))
-        y = -round(lineLength * math.cos(windAngleRad)) # Negated because screen Y positive is downward
-        print(f"Wind Angle was {windAngle}, coords are (x: {x}, y: {y})")
+    def calc_wind_dir_coords(wind_angle: float, magnitude: int):
+        wind_angle_rad = wind_angle * math.pi / 180
+        x = round(magnitude * math.sin(wind_angle_rad))
+        y = -round(magnitude * math.cos(wind_angle_rad)) # Negated because screen Y positive is downward
+        print(f"Wind Angle was {wind_angle}, coords are (x: {x}, y: {y})")
         return [x, y]
     
-    def calc_wind_strength_coords(windSpeed: float, scaleMultiplier: int):
-        beaufort_scale = math.pow((windSpeed / BEAUFORT_COMP), BEAUFORT_POW)
-        print(f"Wind Speed was {windSpeed}m/s, bScale is {beaufort_scale}")
-        return round(beaufort_scale * scaleMultiplier)
+    def calc_wind_strength_coords(wind_speed: float, scale_multiplier: int):
+        beaufort_scale = math.pow((wind_speed / BEAUFORT_COMP), BEAUFORT_POW)
+        print(f"Wind Speed was {wind_speed}m/s, bScale is {beaufort_scale}")
+        return round(beaufort_scale * scale_multiplier)
 

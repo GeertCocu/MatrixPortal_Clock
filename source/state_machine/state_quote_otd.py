@@ -5,12 +5,11 @@ import terminalio
 QUOTE = "Amelia <3"
 
 class StateQuoteOTD(State):
-    def __init__(self, displayWidth, displayHeight, displayGroup, font, debug):
+    def __init__(self, display_width: int, display_height: int, display_group, font):
         super().__init__("QuoteOTD")
-        self.displayWidth = displayWidth
-        self.displayHeight = displayHeight
-        self.displayGroup = displayGroup
-        self.debug = debug
+        self.display_width = display_width
+        self.display_height = display_height
+        self.display_group = display_group
 
         if font == None:
             self.font = terminalio.FONT
@@ -19,21 +18,17 @@ class StateQuoteOTD(State):
 
         self.quote_label = label.Label(self.font)
         self.quote_label.anchor_point = (0.5, 0.5)
-        self.quote_label.anchored_position = (self.displayWidth / 2, self.displayHeight / 2)
+        self.quote_label.anchored_position = (self.display_width / 2, self.display_height / 2)
         self.logMem()
 
     def load(self):
         super().load()
-        self.displayGroup.append(self.quote_label)
-        self.quote_label.text = "\n".join(wrap_text_to_pixels(QUOTE, self.displayWidth, self.font))
-        self.quote_label.color = 0xCC4000
         print("Loading Quote")
-        if self.debug:
-            bbx, bby, bbwidth, bbh = self.quote_label.bounding_box
-            print("Label box: {},{},{},{}".format(bbx, bby, bbwidth, bbh))
-            print("Label x: {} y: {}".format(self.quote_label.x, self.quote_label.y))
+        self.display_group.append(self.quote_label)
+        self.quote_label.text = "\n".join(wrap_text_to_pixels(QUOTE, self.display_width, self.font))
+        self.quote_label.color = 0xCC4000
 
     def unload(self):
         super().unload()
-        self.displayGroup.remove(self.quote_label)
+        self.display_group.remove(self.quote_label)
         print("Bye Quote")

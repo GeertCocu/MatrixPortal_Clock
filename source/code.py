@@ -72,29 +72,29 @@ gc.collect()
 cur_mem = gc.mem_free()
 print("Available memory pre-statemachine: {} bytes".format(cur_mem))
 
-stateMachine = StateMachine()
-stateMachine.addState(StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG))
-stateMachine.addState(StateClock(display.width, display.height, group, DEBUG, BLINK))
-stateMachine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_1", JUN_18, JUN_10))
-stateMachine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_2", JUN_18, JUN_10))
-stateMachine.setState(StateClock.clockId)
+state_machine = StateMachine()
+state_machine.addState(StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG))
+state_machine.addState(StateClock(display.width, display.height, group, DEBUG, BLINK))
+state_machine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_1", JUN_18, JUN_10))
+state_machine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_2", JUN_18, JUN_10))
+state_machine.setState(StateClock.clockId)
 
-buttonUpState = ButtonState(btnUp)
-buttonDownState = ButtonState(btnDown)
+button_up_state = ButtonState(btnUp)
+button_down_state = ButtonState(btnDown)
 
 while True:
     try:
-        stateMachine.update()
+        state_machine.update()
 
         # Selects next state if up button was released
-        buttonStateChanged, currentButtonValue = buttonUpState.pollButtonState()
-        if(buttonStateChanged and currentButtonValue):
-           stateMachine.nextState()
+        button_state_changed, current_button_value = button_up_state.pollButtonState()
+        if(button_state_changed and current_button_value):
+           state_machine.nextState()
         
         # Selects previous state if down button was released
-        buttonStateChanged, currentButtonValue = buttonDownState.pollButtonState()
-        if(buttonStateChanged and currentButtonValue):
-           stateMachine.prevState()
+        button_state_changed, current_button_value = button_down_state.pollButtonState()
+        if(button_state_changed and current_button_value):
+           state_machine.prevState()
         
     except RuntimeError as e:
         print("Something went wrong -", e)

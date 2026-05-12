@@ -8,12 +8,12 @@ from adafruit_display_text.label import Label
 class StateClock(State):
     clockId = "clock"
 
-    def __init__(self, displayWidth, displayHeight, displayGroup, debug, blink):
+    def __init__(self, display_width: int, display_height: int, display_group, debug: bool, blink: bool):
         super().__init__(self.clockId)
         
-        self.displayWidth = displayWidth
-        self.displayHeight = displayHeight
-        self.displayGroup = displayGroup
+        self.display_width = display_width
+        self.display_height = display_height
+        self.display_group = display_group
         self.debug = debug
         self.blink = blink
 
@@ -24,7 +24,7 @@ class StateClock(State):
         
         self.clock_label = Label(self.font)
         self.clock_label.anchor_point = (0.5, 0.5)
-        self.clock_label.anchored_position = (self.displayWidth / 2, self.displayHeight / 2)
+        self.clock_label.anchored_position = (self.display_width / 2, self.display_height / 2)
 
         self.next_blink_time = None
 
@@ -37,13 +37,13 @@ class StateClock(State):
 
     def load(self):
         super().load()
-        self.displayGroup.append(self.clock_label)
+        self.display_group.append(self.clock_label)
         self.update_time(show_colon=True)
         print("Clock Loaded!")
 
     def unload(self):
         super().unload()
-        self.displayGroup.remove(self.clock_label)
+        self.display_group.remove(self.clock_label)
         print("Clock Unloaded!")
 
     def update(self):
