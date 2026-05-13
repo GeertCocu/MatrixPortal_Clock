@@ -19,6 +19,7 @@ from state_machine.state_machine import StateMachine
 from state_machine.state_clock import StateClock
 from state_machine.state_quote_otd import StateQuoteOTD
 from state_machine.state_weather import StateWeather
+from state_cycle import StateCycle
 
 from font_junction_regular_10 import FONT as JUN_10
 from font_junction_regular_18 import FONT as JUN_18
@@ -73,14 +74,15 @@ cur_mem = gc.mem_free()
 print("Available memory pre-statemachine: {} bytes".format(cur_mem))
 
 state_machine = StateMachine()
-state_machine.addState(StateQuoteOTD(display.width, display.height, group, JUN_10, DEBUG))
 state_machine.addState(StateClock(display.width, display.height, group, DEBUG, BLINK))
 state_machine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_1", JUN_18, JUN_10))
+state_machine.addState(StateQuoteOTD(display.width, display.height, group, JUN_10))
 state_machine.addState(StateWeather(display.width, display.height, group, network, "OPENWEATHER_LOCATION_2", JUN_18, JUN_10))
 state_machine.setState(StateClock.clockId)
 
 button_up_state = ButtonState(btnUp)
 button_down_state = ButtonState(btnDown)
+state_cycle = StateCycle(state_machine, 30)
 
 while True:
     try:
@@ -95,6 +97,8 @@ while True:
         button_state_changed, current_button_value = button_down_state.pollButtonState()
         if(button_state_changed and current_button_value):
            state_machine.prevState()
+
+        state_cycle.update()
         
     except RuntimeError as e:
         print("Something went wrong -", e)
