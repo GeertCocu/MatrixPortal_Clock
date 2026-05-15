@@ -12,9 +12,9 @@ from adafruit_display_shapes import circle
 
 DATA_SOURCE_FORMAT = "https://api.openweathermap.org/data/3.0/onecall?lat={}&lon={}&exclude=minutely,hourly,alerts&appid=" + os.getenv('OPENWEATHER_TOKEN') + "&units=metric"
 UPDATE_INTERVAL = 600 # Once every 10 minutes
-FAIL_COLOR = 0xFF0000
-BIG_COLOR = 0xFFFFFF
-SMALL_COLOR = 0x80FFFF
+FAIL_COLOR = 0x430000
+BIG_COLOR = 0x434343
+SMALL_COLOR = 0x004343
 
 BEAUFORT_COMP = 0.836
 BEAUFORT_POW = 2 / 3
@@ -100,7 +100,7 @@ class StateWeather(State):
         self.wind_dir_line = None
         self.has_wind_coords_changed = False
         self.wind_coords = None
-        self.wind_compass = circle.Circle(self.wind_origin[0], self.wind_origin[1], COMPASS_RADIUS, fill=None, outline=SMALL_COLOR, stroke=2)
+        self.wind_compass = circle.Circle(self.wind_origin[0], self.wind_origin[1], COMPASS_RADIUS, fill=None, outline=BIG_COLOR)
         self.weather_group.append(self.wind_compass)
 
         self.logMem()
@@ -112,8 +112,8 @@ class StateWeather(State):
 
     def unload(self):
         self.display_group.remove(self.weather_group) 
-        super().unload()
         print("Goodbye Weather")
+        return super().unload()
 
     def update(self):
         super().update()
