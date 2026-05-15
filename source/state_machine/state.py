@@ -12,6 +12,7 @@ class State(object):
 
     def unload(self):
         self.logMem()
+        gc.collect()
 
     def update(self):
         pass
