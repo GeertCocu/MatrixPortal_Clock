@@ -22,14 +22,25 @@ COMPASS_RADIUS = 7
 
 NO_DATA_STRING = "--"
 
-WEATHER_ICON_SPREADSHEET = "/icons/weather/weather-icons.bmp"
+COUNTRY_ICONS_PATH = "/icons/countries.bmp"
+COUNTRY_ICON_MAP = ("nl", "sg")
+WEATHER_ICONS_PATH = "/icons/weather-icons.bmp"
 WEATHER_ICON_MAP = ("01", "02", "03", "04", "09", "10", "11", "13", "50")
+HIGHLOW_PATH = "/icons/highlow.bmp"
 ICON_WIDTH = 16
 ICON_HEIGHT = 16
 
 class StateWeather(State):
+    _country_icons_bitmap = None
+    _country_icons_shader = None
+    _weather_icons_bitmap = None
+    _weather_icons_shader = None
+    _highlow_bitmap = None
+    _highlow_shader = None
+
     def __init__(self, display_width: int, display_height: int, display_group, network: Network, location_key: str, big_font, small_font):
         super().__init__("Weather_{}".format(location_key))
+        StateWeather.load_assets()
         self.network = network
         self.display_width = display_width
         self.display_height = display_height
@@ -72,28 +83,41 @@ class StateWeather(State):
         self.temp_max_label.color = FAIL_COLOR
         self.weather_group.append(self.temp_max_label)
 
+        # HighLow format image
+        self.high_low_icon_group = displayio.Group()
+        self.high_low_icon_group.x = 44        
+        self.high_low_sprite = displayio.TileGrid(
+            StateWeather._highlow_bitmap,
+            pixel_shader=StateWeather._highlow_shader,
+        )
+        self.high_low_icon_group.append(self.high_low_sprite)
+        self.weather_group.append(self.high_low_icon_group)
+
         # Weather Type Icon
         self.weather_icon_group = displayio.Group()
         self.weather_group.append(self.weather_icon_group)
         self.has_weather_icon_changed = False
         self.weather_icon = ""
-        # Load the icon sprite sheet
-        self.weather_icons = displayio.OnDiskBitmap(WEATHER_ICON_SPREADSHEET)
         self.weather_icon_sprite = displayio.TileGrid(
-            self.weather_icons,
-            pixel_shader=self.weather_icons.pixel_shader,
+            StateWeather._weather_icons_bitmap,
+            pixel_shader=StateWeather._weather_icons_shader,
             tile_width=ICON_WIDTH,
             tile_height=ICON_HEIGHT
         )
         self.weather_icon_group.append(self.weather_icon_sprite)
 
         # Location Icon, based on country
-        self.location_icon_group = self.construct_icon_group("/icons/countries/" + flag + ".bmp", 0, 16)
-        self.weather_group.append(self.location_icon_group)
-
-        # HighLow format image
-        self.high_low_icon_group = self.construct_icon_group("/icons/weather/highlow.bmp", 44, 0)
-        self.weather_group.append(self.high_low_icon_group)
+        self.country_icon_group = displayio.Group()
+        self.country_icon_group.y = 16
+        self.country_icon_sprite = displayio.TileGrid(
+            StateWeather._country_icons_bitmap,
+            pixel_shader=StateWeather._country_icons_shader,
+            tile_width=ICON_WIDTH,
+            tile_height=ICON_HEIGHT
+        )
+        self.set_country_icon(flag)
+        self.country_icon_group.append(self.country_icon_sprite)
+        self.weather_group.append(self.country_icon_group)
 
         # Wind Direction/Speed
         self.wind_origin = 28, 24
@@ -157,29 +181,27 @@ class StateWeather(State):
             self.wind_dir_line = line.Line(self.wind_coords[0], self.wind_coords[1], self.wind_coords[2], self.wind_coords[3],FAIL_COLOR)
             self.weather_group.append(self.wind_dir_line)
     
-    def set_weather_icon(self, icon_name):
-        print("Set icon to", icon_name)
-        if icon_name is not None:
+    def set_weather_icon(self, weather_name):
+        print("Set weather icon to", weather_name)
+        if weather_name is not None:
             row = None
             for index, icon in enumerate(WEATHER_ICON_MAP):
-                if icon == icon_name[0:2]:
+                if icon == weather_name[0:2]:
                     row = index
                     break
-            column = 1 if icon_name[2] == "n" else 0
+            column = 1 if weather_name[2] == "n" else 0
             if row is not None:
                 self.weather_icon_sprite[0] = (row * 2) + column
-
-    @staticmethod
-    def construct_icon_group(file_name: str, x: int, y: int):
-        print("Loading icon from ", file_name)
-        icon = displayio.OnDiskBitmap(file_name)
-        weather_icon = displayio.TileGrid(icon, pixel_shader=icon.pixel_shader)
-        print("Icon loaded")
-        icon_group = displayio.Group()
-        icon_group.x = x
-        icon_group.y = y
-        icon_group.append(weather_icon)
-        return icon_group
+    
+    def set_country_icon(self, country_name):
+        print("Set country icon to", country_name)
+        if country_name is not None:
+            row = 0
+            for index, icon in enumerate(COUNTRY_ICON_MAP):
+                if icon == country_name:
+                    row = index
+                    break
+            self.country_icon_sprite[0] = row
     
     @staticmethod
     def calc_wind_coords(wind_angle: float, wind_speed: float, radius: int, wind_scale: int = 1, origin: tuple=(0,0)):
@@ -203,4 +225,18 @@ class StateWeather(State):
         print(f"Wind Speed was {wind_speed}m/s, bScale is {beaufort_scale}")
         return beaufort_scale
 
+    @classmethod
+    def load_assets(cls):
+        if cls._country_icons_bitmap is None:
+            print("Constructing countries")
+            cls._country_icons_bitmap = displayio.OnDiskBitmap(COUNTRY_ICONS_PATH)
+            cls._country_icons_shader = cls._country_icons_bitmap.pixel_shader
+        if cls._weather_icons_bitmap is None:
+            print("Constructing weather")
+            cls._weather_icons_bitmap = displayio.OnDiskBitmap(WEATHER_ICONS_PATH)
+            cls._weather_icons_shader = cls._weather_icons_bitmap.pixel_shader
+        if cls._highlow_bitmap is None:
+            print("Constructing highlow")
+            cls._highlow_bitmap = displayio.OnDiskBitmap(HIGHLOW_PATH)
+            cls._highlow_shader = cls._highlow_bitmap.pixel_shader
 
